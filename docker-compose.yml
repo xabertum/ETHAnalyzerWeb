@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    image: eth-analyzer-backend
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      DB_PATH: /data/eth.db
+      EXCEL_PATH: /import/Gastos Aplazados (2019_29).xlsx
+      EXCEL_SHEET: ${EXCEL_SHEET:-Inversión Crypto}
+      COINGECKO_BASE_URL: ${COINGECKO_BASE_URL:-https://api.coingecko.com/api/v3}
+      COINGECKO_COIN_ID: ${COINGECKO_COIN_ID:-ethereum}
+      BASE_CURRENCY: ${BASE_CURRENCY:-eur}
+      PRICE_CACHE_TTL_MS: ${PRICE_CACHE_TTL_MS:-30000}
+      HISTORY_CACHE_TTL_MS: ${HISTORY_CACHE_TTL_MS:-300000}
+      ALERT_POLL_INTERVAL_MS: ${ALERT_POLL_INTERVAL_MS:-60000}
+    volumes:
+      - eth-data:/data
+      # Fuente del importador. En unidades virtuales (Google Drive) este bind mount llega vacío:
+      # usa "docker compose cp" tal y como explica el README.
+      - ./data:/import:ro
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+
+  frontend:
+    build:
+      context: ./frontend
+    image: eth-analyzer-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+
+volumes:
+  eth-data:

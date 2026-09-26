@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android bloquea por defecto el tráfico HTTP sin cifrar. La app necesita permitirlo
+    porque la importación opcional desde el PC se hace contra una IP privada de la red
+    local (http://192.168.x.x:4000), y la configuración de red de Android no admite
+    rangos de direcciones, solo dominios o IPs concretas.
+
+    El resto del tráfico de la app (CoinGecko) usa HTTPS en todos los casos.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -1,0 +1,48 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:translateX="36.8"
+        android:translateY="26.0"
+        android:scaleX="0.0637"
+        android:scaleY="0.0637">
+        <!-- 1. Base inner plane -->
+        <path
+            android:fillColor="#8EA6FF"
+            android:fillAlpha="0.57"
+            android:pathData="M270,325.2 L0.1,447.8 L270,607.4 L539.9,447.8 Z" />
+        <!-- 2. Upper Left facet -->
+        <path
+            android:fillColor="#B6CCFF"
+            android:fillAlpha="0.84"
+            android:pathData="M0.1,447.8 L270,607.4 L270,0 Z" />
+        <!-- 3. Upper Right facet -->
+        <path
+            android:fillColor="#F5F8FF"
+            android:fillAlpha="1.0"
+            android:pathData="M270,0 L270,607.4 L539.9,447.8 Z" />
+        <!-- 4. Lower Left facet -->
+        <path
+            android:fillColor="#8EA6FF"
+            android:fillAlpha="0.76"
+            android:pathData="M0,499 L270,879.4 L270,658.5 Z" />
+        <!-- 5. Lower Right facet -->
+        <path
+            android:fillColor="#E4EEFF"
+            android:fillAlpha="0.96"
+            android:pathData="M270,658.5 L270,879.4 L540,499 Z" />
+        <!-- Ridge spine highlights -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeAlpha="0.9"
+            android:strokeWidth="5"
+            android:pathData="M270,0 L270,607.4" />
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeAlpha="0.8"
+            android:strokeWidth="5"
+            android:pathData="M270,658.5 L270,879.4" />
+    </group>
+</vector>
