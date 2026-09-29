@@ -53,16 +53,16 @@ async function getJson<T>(url: string, params: Record<string, string>): Promise<
     throw new Error(`Kraken respondió ${response.status}`);
   }
 
-  function getOhlcRows(payload: KrakenOhlc): KrakenOhlcRow[] | null {
-    const rows = payload.result
-      ? Object.entries(payload.result).find(([key, value]) => key !== 'last' && Array.isArray(value))?.[1]
-      : undefined;
-    return Array.isArray(rows) ? rows : null;
-  }
-
   return (
     typeof response.data === 'string' ? JSON.parse(response.data) : response.data
   ) as T;
+}
+
+function getOhlcRows(payload: KrakenOhlc): KrakenOhlcRow[] | null {
+  const rows = payload.result
+    ? Object.entries(payload.result).find(([key, value]) => key !== 'last' && Array.isArray(value))?.[1]
+    : undefined;
+  return Array.isArray(rows) ? rows : null;
 }
 
 async function rememberQuote(quote: PriceQuote): Promise<void> {
@@ -141,7 +141,7 @@ export async function getPriceHistory(days: string): Promise<PriceHistory> {
     const payload = await getJson<KrakenOhlc>(`${KRAKEN_BASE_URL}/0/public/OHLC`, params);
     const rows = getOhlcRows(payload);
     if (!rows) throw new Error('Respuesta de Kraken sin histórico válido');
-    const points: PricePoint[] = rows.map(([ts, , , , close]) => ({
+    const points: PricePoint[] = rows.map(([ts, , , , close]: KrakenOhlcRow) => ({
       ts: new Date(ts * 1000).toISOString(),
       priceEur: Number(close),
     }));
