@@ -20,4 +20,3 @@ frontend/android/.idea/
 *.jks
 keystore.properties
 dist-apk/
-
