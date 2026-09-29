@@ -1,0 +1,10 @@
+{
+    "java.import.gradle.java.home": "C:\\Java\\jdk-21.0.12.1+1",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "C:\\Java\\jdk-21.0.12.1+1",
+            "default": true
+        }
+    ]
+}

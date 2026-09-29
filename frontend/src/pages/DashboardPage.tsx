@@ -148,7 +148,14 @@ export function DashboardPage() {
         <KpiCard
           label="Coste de la posición"
           value={formatEur(summary?.costBasis)}
-          hint={`Precio medio de compra: ${formatEur(summary?.averageBuyPrice, true)}`}
+          hint={
+            <>
+              Precio medio de compra: {formatEur(summary?.averageBuyPrice, true)}
+              <span className="kpi-formula">
+                Compras acumuladas − coste proporcional retirado en cada venta (a precio medio)
+              </span>
+            </>
+          }
         />
         <KpiCard
           label="Ganancia latente"
