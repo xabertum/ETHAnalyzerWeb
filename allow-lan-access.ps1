@@ -48,6 +48,8 @@ if ($Remove) {
 
 $profile = Get-NetConnectionProfile | Where-Object { $_.IPv4Connectivity -ne 'Disconnected' } | Select-Object -First 1
 
+if (-not $profile) { throw 'No se ha encontrado una conexión de red activa.' }
+
 if ($profile -and $profile.NetworkCategory -eq 'Public' -and -not $KeepNetworkPublic) {
     Set-NetConnectionProfile -InterfaceIndex $profile.InterfaceIndex -NetworkCategory Private
     Write-Host "Red '$($profile.Name)' marcada como Privada." -ForegroundColor Green
@@ -55,16 +57,29 @@ if ($profile -and $profile.NetworkCategory -eq 'Public' -and -not $KeepNetworkPu
     Write-Host "Red '$($profile.Name)': $($profile.NetworkCategory)" -ForegroundColor Cyan
 }
 
-# --- 2. Rango de la red local ----------------------------------------------
+# --- 2. Interfaz y rango de la red local -----------------------------------
 
 $ip = Get-NetIPAddress -AddressFamily IPv4 |
-    Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' -and $_.InterfaceAlias -notlike '*vEthernet*' } |
+    Where-Object {
+        $_.InterfaceIndex -eq $profile.InterfaceIndex -and
+        $_.IPAddress -notlike '127.*' -and
+        $_.IPAddress -notlike '169.254.*'
+    } |
     Select-Object -First 1
 
-if (-not $ip) { throw 'No se ha encontrado una dirección IP en la red local.' }
+if (-not $ip) { throw "No se ha encontrado una dirección IPv4 en la interfaz '$($profile.InterfaceAlias)'." }
 
-$subnet = ($ip.IPAddress -split '\.')[0..2] -join '.'
-$scope = "$subnet.0/24"
+if ($ip.PrefixLength -lt 1 -or $ip.PrefixLength -gt 32) {
+    throw "La longitud de prefijo IPv4 no es válida: $($ip.PrefixLength)"
+}
+
+$addressBytes = [Net.IPAddress]::Parse($ip.IPAddress).GetAddressBytes()
+$networkBytes = for ($i = 0; $i -lt $addressBytes.Length; $i++) {
+    $bits = [math]::Min(8, [math]::Max(0, $ip.PrefixLength - ($i * 8)))
+    $mask = if ($bits -eq 0) { 0 } else { (0xFF -shl (8 - $bits)) -band 0xFF }
+    $addressBytes[$i] -band $mask
+}
+$scope = "$($networkBytes -join '.')/$($ip.PrefixLength)"
 Write-Host "Se permitirá el acceso solo desde $scope" -ForegroundColor Cyan
 
 # --- 3. Reglas de firewall -------------------------------------------------
