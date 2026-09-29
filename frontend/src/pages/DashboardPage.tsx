@@ -74,7 +74,7 @@ export function DashboardPage() {
     try {
       await api.getCurrentPrice(true);
     } catch {
-      /* si CoinGecko falla se usa el último precio conocido */
+      /* si Kraken falla se usa el último precio conocido */
     }
     await Promise.all([loadSummary(), loadHistory()]);
     setRefreshing(false);
@@ -115,7 +115,7 @@ export function DashboardPage() {
       {error ? <div className="error-banner">{error}</div> : null}
       {priceStale ? (
         <div className="warn-banner">
-          No se ha podido obtener el precio actual de CoinGecko. Las métricas de valoración se
+          No se ha podido obtener el precio actual de Kraken. Las métricas de valoración se
           muestran vacías.
         </div>
       ) : null}
@@ -289,7 +289,7 @@ export function DashboardPage() {
           </span>
           <span className="hint">
             Pasa el ratón por encima de un marcador para ver el detalle de la operación. Datos de
-            CoinGecko
+            Kraken
             {summary?.priceUpdatedAt ? ` · actualizado ${formatDateTime(summary.priceUpdatedAt)}` : ''}.
           </span>
         </div>

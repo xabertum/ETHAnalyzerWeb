@@ -16,10 +16,9 @@ export const config = {
   excelPath:
     process.env.EXCEL_PATH ?? path.join(repoRoot, 'data', 'Gastos Aplazados (2019_29).xlsx'),
   excelSheet: process.env.EXCEL_SHEET ?? 'Inversión Crypto',
-  coingecko: {
-    baseUrl: process.env.COINGECKO_BASE_URL ?? 'https://api.coingecko.com/api/v3',
-    coinId: process.env.COINGECKO_COIN_ID ?? 'ethereum',
-    apiKey: process.env.COINGECKO_API_KEY ?? '',
+  kraken: {
+    baseUrl: process.env.KRAKEN_BASE_URL ?? 'https://api.kraken.com',
+    pair: process.env.KRAKEN_PAIR ?? 'ETHEUR',
   },
   baseCurrency: (process.env.BASE_CURRENCY ?? 'eur').toLowerCase(),
   priceCacheTtlMs: num(process.env.PRICE_CACHE_TTL_MS, 30_000),

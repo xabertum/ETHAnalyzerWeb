@@ -50,8 +50,8 @@ function PricePill() {
       className="price-pill"
       title={
         quote.stale
-          ? 'Precio en caché (CoinGecko no responde)'
-          : `Dato de CoinGecko del ${new Date(quote.updatedAt).toLocaleString('es-ES')}`
+          ? 'Precio en caché (Kraken no responde)'
+          : `Dato de Kraken del ${new Date(quote.updatedAt).toLocaleString('es-ES')}`
       }
     >
       <span>ETH {formatEur(quote.priceEur)}</span>

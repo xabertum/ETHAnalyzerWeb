@@ -106,7 +106,7 @@ export function PriceChart({ points, transactions, loading, livePoint }: PriceCh
 
     if (!livePoint || base.length === 0) return base;
 
-    // El histórico de CoinGecko se cachea varios minutos: se prolonga con el precio en vivo
+    // El histórico de Kraken se cachea varios minutos: se prolonga con el precio en vivo
     // para que el extremo derecho del gráfico coincida siempre con la cotización actual.
     const liveTs = new Date(livePoint.ts).getTime();
     if (!Number.isFinite(liveTs)) return base;

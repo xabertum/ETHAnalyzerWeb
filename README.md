@@ -5,7 +5,7 @@ partiendo de los datos de la hoja **Inversión Crypto** del Excel `Gastos Aplaza
 
 - **Backend**: Node 22 + Express + TypeScript + SQLite (`better-sqlite3`).
 - **Frontend**: React + Vite + TypeScript + Recharts, servido por Nginx.
-- **Precios**: API pública de CoinGecko (ETH/EUR), cacheada en el backend.
+- **Precios**: API pública de Kraken (ETH/EUR), cacheada en el backend.
 - **Despliegue**: dos contenedores orquestados con Docker Compose y volumen persistente.
 - **App Android**: la misma interfaz empaquetada con Capacitor, autónoma y sin servidor
   ([ver sección](#app-de-android-apk)).
@@ -124,7 +124,7 @@ muestra el detalle de la operación.
 
 Los datos se refrescan automáticamente **cada 30 segundos** y la cabecera muestra la hora de la
 última actualización junto al tiempo transcurrido, con un botón *Actualizar ahora* que fuerza una
-lectura nueva de CoinGecko saltándose la caché.
+lectura nueva de Kraken saltándose la caché.
 
 El gráfico prolonga la serie con el **precio en vivo**: su último punto (círculo azul) es la
 cotización actual y se mueve cada 30 segundos, mientras que el histórico completo se vuelve a pedir
@@ -163,7 +163,7 @@ periódicamente, por lo que las alertas se evalúan aunque el navegador esté ce
 ## App de Android (APK)
 
 La misma interfaz se empaqueta con **Capacitor** en una APK **autónoma**: guarda los datos en el
-propio móvil, consulta CoinGecko directamente y **no necesita el PC ni el backend** para funcionar.
+propio móvil, consulta Kraken directamente y **no necesita el PC ni el backend** para funcionar.
 
 ### Cómo comparte código con la web
 
@@ -234,7 +234,7 @@ También puedes exportar e importar un fichero JSON como copia de seguridad.
 | --- | --- | --- |
 | Navegación | pestañas en la cabecera | barra inferior con iconos |
 | Datos | SQLite en Docker | almacenamiento del móvil |
-| Origen de precios | backend (caché compartida) | CoinGecko directo |
+| Origen de precios | backend (caché compartida) | Kraken directo |
 | Alertas | poller del servidor cada minuto | segundo plano cada ~15 min |
 | Conexión necesaria | el PC encendido | solo internet |
 
@@ -252,8 +252,8 @@ Los datos de la web y los de la app son **independientes**: la importación es u
 | `DB_PATH` | `/data/eth.db` | Fichero SQLite (volumen `eth-data` en Docker) |
 | `EXCEL_PATH` | `/import/Gastos Aplazados (2019_29).xlsx` | Excel de origen para el importador |
 | `EXCEL_SHEET` | `Inversión Crypto` | Hoja a importar |
-| `COINGECKO_BASE_URL` | `https://api.coingecko.com/api/v3` | Endpoint de CoinGecko |
-| `COINGECKO_API_KEY` | *(vacío)* | Opcional, para la API Demo de CoinGecko |
+| `KRAKEN_BASE_URL` | `https://api.kraken.com` | Endpoint de Kraken |
+| `KRAKEN_PAIR` | `ETHEUR` | Par de cotización de Kraken |
 | `BASE_CURRENCY` | `eur` | Moneda de referencia |
 | `PRICE_CACHE_TTL_MS` | `30000` | Caché del precio actual |
 | `HISTORY_CACHE_TTL_MS` | `300000` | Caché del histórico |
@@ -273,7 +273,8 @@ Los datos de la web y los de la app son **independientes**: la importación es u
   cobrado, el importe de la compra debe incluir ese dinero, no solo la aportación nueva. De lo
   contrario el coste de la posición y el precio medio de compra salen distorsionados.
 - Cada tarjeta del dashboard indica debajo la fórmula con la que se calcula.
-- CoinGecko limita las peticiones en su plan gratuito; el backend cachea precio e histórico para que
-  todos los clientes compartan una sola llamada. Si la API falla, se sirve el último valor conocido
-  marcado como `stale`.
+- Kraken no requiere credenciales para estas cotizaciones públicas. El backend cachea precio e
+  histórico para que todos los clientes compartan una sola llamada. Si la API falla, se sirve el
+  último valor conocido marcado como `stale`. El rango **Máx** muestra los últimos 720 días, que
+  es el histórico máximo disponible en este endpoint público.
 - La aplicación no tiene autenticación: está pensada para uso local o en red doméstica.

@@ -2,9 +2,8 @@ import { CapacitorHttp } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
 import type { PriceHistory, PricePoint, PriceQuote } from '../../types';
 
-const BASE_URL = 'https://api.coingecko.com/api/v3';
-const COIN_ID = 'ethereum';
-const CURRENCY = 'eur';
+const KRAKEN_BASE_URL = 'https://api.kraken.com';
+const KRAKEN_PAIR = 'ETHEUR';
 const PRICE_TTL_MS = 30_000;
 const HISTORY_TTL_MS = 300_000;
 const LAST_QUOTE_KEY = 'eth-analyzer-last-quote';
@@ -13,6 +12,28 @@ interface CacheEntry<T> {
   value: T;
   expiresAt: number;
 }
+
+interface KrakenTicker {
+  c?: [string, ...string[]];
+  p?: [string, ...string[]];
+  v?: [string, ...string[]];
+}
+
+type KrakenOhlcRow = [number, string, string, string, string, ...unknown[]];
+
+interface KrakenOhlc {
+  result?: Record<string, KrakenOhlcRow[] | number>;
+}
+
+const historyIntervals: Record<string, number> = {
+  '1': 5,
+  '7': 15,
+  '30': 60,
+  '90': 240,
+  '180': 720,
+  '365': 1440,
+  max: 1440,
+};
 
 let quoteCache: CacheEntry<PriceQuote> | null = null;
 const historyCache = new Map<string, CacheEntry<PricePoint[]>>();
@@ -29,7 +50,14 @@ async function getJson<T>(url: string, params: Record<string, string>): Promise<
   });
 
   if (response.status < 200 || response.status >= 300) {
-    throw new Error(`CoinGecko respondió ${response.status}`);
+    throw new Error(`Kraken respondió ${response.status}`);
+  }
+
+  function getOhlcRows(payload: KrakenOhlc): KrakenOhlcRow[] | null {
+    const rows = payload.result
+      ? Object.entries(payload.result).find(([key, value]) => key !== 'last' && Array.isArray(value))?.[1]
+      : undefined;
+    return Array.isArray(rows) ? rows : null;
   }
 
   return (
@@ -55,31 +83,24 @@ async function lastKnownQuote(): Promise<PriceQuote | null> {
 }
 
 async function fetchQuote(): Promise<PriceQuote> {
-  const payload = await getJson<Record<string, Record<string, number>>>(
-    `${BASE_URL}/simple/price`,
-    {
-      ids: COIN_ID,
-      vs_currencies: CURRENCY,
-      include_24hr_change: 'true',
-      include_24hr_vol: 'true',
-      include_market_cap: 'true',
-      include_last_updated_at: 'true',
-    },
+  const payload = await getJson<{ result?: Record<string, KrakenTicker> }>(
+    `${KRAKEN_BASE_URL}/0/public/Ticker`,
+    { pair: KRAKEN_PAIR },
   );
+  const ticker = payload.result && Object.values(payload.result)[0];
+  const price = Number(ticker?.c?.[0]);
+  if (!Number.isFinite(price)) throw new Error('Respuesta de Kraken sin precio válido');
 
-  const data = payload?.[COIN_ID];
-  const price = data?.[CURRENCY];
-  if (typeof price !== 'number') throw new Error('Respuesta de CoinGecko sin precio válido');
-
-  const lastUpdated = data.last_updated_at;
+  const average24h = Number(ticker?.p?.[1]);
+  const volume24h = Number(ticker?.v?.[1]);
   return {
     priceEur: price,
-    change24h: data[`${CURRENCY}_24h_change`] ?? null,
-    marketCapEur: data[`${CURRENCY}_market_cap`] ?? null,
-    volume24hEur: data[`${CURRENCY}_24h_vol`] ?? null,
-    updatedAt: new Date(
-      typeof lastUpdated === 'number' ? lastUpdated * 1000 : Date.now(),
-    ).toISOString(),
+    change24h:
+      Number.isFinite(average24h) && average24h > 0 ? ((price - average24h) / average24h) * 100 : null,
+    marketCapEur: null,
+    volume24hEur:
+      Number.isFinite(volume24h) && Number.isFinite(average24h) ? volume24h * average24h : null,
+    updatedAt: new Date().toISOString(),
     stale: false,
   };
 }
@@ -112,14 +133,21 @@ export async function getPriceHistory(days: string): Promise<PriceHistory> {
   if (cached && cached.expiresAt > Date.now()) return { days, points: cached.value };
 
   try {
-    const payload = await getJson<{ prices?: [number, number][] }>(
-      `${BASE_URL}/coins/${COIN_ID}/market_chart`,
-      { vs_currency: CURRENCY, days },
-    );
-    const points: PricePoint[] = (payload.prices ?? []).map(([ts, price]) => ({
-      ts: new Date(ts).toISOString(),
-      priceEur: price,
+    const interval = historyIntervals[days];
+    const params: Record<string, string> = { pair: KRAKEN_PAIR, interval: String(interval) };
+    if (days !== 'max') {
+      params.since = String(Math.floor(Date.now() / 1000) - Number(days) * 86_400);
+    }
+    const payload = await getJson<KrakenOhlc>(`${KRAKEN_BASE_URL}/0/public/OHLC`, params);
+    const rows = getOhlcRows(payload);
+    if (!rows) throw new Error('Respuesta de Kraken sin histórico válido');
+    const points: PricePoint[] = rows.map(([ts, , , , close]) => ({
+      ts: new Date(ts * 1000).toISOString(),
+      priceEur: Number(close),
     }));
+    if (points.some((point) => !Number.isFinite(point.priceEur))) {
+      throw new Error('Respuesta de Kraken con precios no válidos');
+    }
     historyCache.set(days, { value: points, expiresAt: Date.now() + HISTORY_TTL_MS });
     return { days, points };
   } catch (error) {

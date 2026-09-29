@@ -8,8 +8,7 @@
 
 const ALERTS_KEY = 'alerts';
 const STATE_KEY = 'alertState';
-const PRICE_URL =
-  'https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=eur';
+const PRICE_URL = 'https://api.kraken.com/0/public/Ticker?pair=ETHEUR';
 
 function readJson(key, fallback) {
   try {
@@ -58,10 +57,12 @@ addEventListener('checkAlerts', async (resolve, reject) => {
     }
 
     const response = await fetch(PRICE_URL);
-    if (!response.ok) throw new Error('CoinGecko respondió ' + response.status);
+    if (!response.ok) throw new Error('Kraken respondió ' + response.status);
 
     const payload = await response.json();
-    const price = payload && payload.ethereum && payload.ethereum.eur;
+    const result = payload && payload.result;
+    const ticker = result && result[Object.keys(result)[0]];
+    const price = ticker && Number(ticker.c && ticker.c[0]);
     if (typeof price !== 'number') throw new Error('Respuesta sin precio válido');
 
     const state = readJson(STATE_KEY, {});
